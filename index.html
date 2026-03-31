@@ -199,8 +199,8 @@
     <h1>Pedidos de camisetas de fútbol ⚽</h1>
     <p>
       Página para recoger el pedido conjunto de familiares y amigos.
-      Elige equipo, equipación, tipo de camiseta, talla y extras.
-      Los precios ya llevan incluido <strong>1€ de margen por camiseta</strong>.
+      Los precios ya incluyen <strong>1€ de margen por camiseta</strong>.
+      Los pedidos se guardan en este mismo dispositivo.
     </p>
   </header>
 
@@ -284,13 +284,13 @@
           </div>
 
           <div>
-            <label for="personalizacion">Nombre y número</label>
+            <label for="personalizacion">Texto de nombre y número</label>
             <input id="personalizacion" type="text" placeholder="Ej. Bellingham 5" />
           </div>
 
           <div class="full">
             <label for="observaciones">Observaciones</label>
-            <textarea id="observaciones" placeholder="Color, detalles, si quiere parche concreto, etc."></textarea>
+            <textarea id="observaciones" placeholder="Color, detalles, parche concreto, etc."></textarea>
           </div>
 
           <div class="full checkbox-row">
@@ -306,8 +306,9 @@
           </div>
 
           <div class="full buttons">
-            <button class="btn-primary" onclick="agregarPedido()">Añadir pedido</button>
-            <button class="btn-secondary" onclick="descargarCSV()">Descargar Excel (CSV)</button>
+            <button type="button" class="btn-primary" id="btnAgregar">Añadir pedido</button>
+            <button type="button" class="btn-secondary" id="btnDescargar">Descargar Excel (CSV)</button>
+            <button type="button" class="btn-secondary" id="btnVaciar">Borrar todos los pedidos</button>
           </div>
         </div>
       </section>
@@ -324,7 +325,7 @@
             <li>Name and number: <strong>+2€</strong></li>
             <li>Patch: <strong>+1€</strong></li>
           </ul>
-          <p class="muted">Todos los precios ya incluyen 1€ de margen por camiseta.</p>
+          <p class="muted">Todos los precios llevan incluido 1€ de margen por camiseta.</p>
         </div>
 
         <div class="card totals">
@@ -351,10 +352,10 @@
     <section class="card" style="margin-top:20px;">
       <h2>Guía de tallas</h2>
       <div class="tabs">
-        <button class="tab-btn active" onclick="mostrarGuia('fan', this)">Fan hombre</button>
-        <button class="tab-btn" onclick="mostrarGuia('player', this)">Player hombre</button>
-        <button class="tab-btn" onclick="mostrarGuia('women', this)">Mujer</button>
-        <button class="tab-btn" onclick="mostrarGuia('kids', this)">Niños</button>
+        <button type="button" class="tab-btn active" data-guia="fan">Fan hombre</button>
+        <button type="button" class="tab-btn" data-guia="player">Player hombre</button>
+        <button type="button" class="tab-btn" data-guia="women">Mujer</button>
+        <button type="button" class="tab-btn" data-guia="kids">Niños</button>
       </div>
       <div class="table-wrap" id="guiaTallas"></div>
     </section>
@@ -367,219 +368,6 @@
     </section>
   </div>
 
-  <script>
-    const precios = {
-      "Fan Version": 11,
-      "Women Version": 11,
-      "Kid Kit": 13,
-      "Player Version": 14,
-      "Retro": 16
-    };
-
-    const guias = {
-      fan: {
-        columnas: ["Talla", "Largo", "Ancho", "Altura", "Peso"],
-        filas: [
-          ["S", "69-71", "53-55", "162-170", "50-62"],
-          ["M", "71-73", "55-57", "170-176", "62-78"],
-          ["L", "73-75", "57-58", "176-182", "78-83"],
-          ["XL", "75-78", "58-60", "182-190", "83-90"],
-          ["XXL", "78-81", "60-62", "190-195", "90-97"],
-          ["XXXL", "81-83", "62-64", "192-197", "97-104"]
-        ]
-      },
-      player: {
-        columnas: ["Talla", "Largo", "Ancho", "Altura", "Peso"],
-        filas: [
-          ["S", "69", "49-51", "162-170", "50-62"],
-          ["M", "69-71", "51-53", "170-176", "62-78"],
-          ["L", "71-73", "53-55", "176-182", "78-83"],
-          ["XL", "73-75", "55-57", "182-190", "83-90"],
-          ["XXL", "75-77", "57-59", "190-195", "90-97"]
-        ]
-      },
-      women: {
-        columnas: ["Talla", "Largo", "Ancho", "Altura"],
-        filas: [
-          ["S", "61-63", "40-41", "150-160"],
-          ["M", "63-66", "41-44", "160-165"],
-          ["L", "66-69", "44-47", "165-170"],
-          ["XL", "69-71", "47-50", "170-175"]
-        ]
-      },
-      kids: {
-        columnas: ["Talla", "Altura", "Edad", "Largo", "Ancho", "Cintura"],
-        filas: [
-          ["16", "95-105", "3-4", "44", "35", "20-37"],
-          ["18", "105-115", "4-5", "47", "37", "21-39"],
-          ["20", "115-125", "5-6", "50", "39", "22-41"],
-          ["22", "125-135", "6-7", "53", "41", "23-42"],
-          ["24", "135-145", "8-9", "56", "43", "24-44"],
-          ["26", "145-155", "10-11", "59", "45", "25-47"],
-          ["28", "155-165", "12-13", "62", "47", "26-50"]
-        ]
-      }
-    };
-
-    let pedidos = [];
-
-    function calcularPrecio() {
-      const tipo = document.getElementById("tipo").value;
-      const cantidad = parseInt(document.getElementById("cantidad").value || "1", 10);
-      const nombreNumero = document.getElementById("nombreNumero").checked;
-      const patch = document.getElementById("patch").checked;
-
-      let precioUnitario = precios[tipo] || 0;
-      if (nombreNumero) precioUnitario += 2;
-      if (patch) precioUnitario += 1;
-
-      return precioUnitario * cantidad;
-    }
-
-    function actualizarPreview() {
-      document.getElementById("precioPreview").textContent = calcularPrecio() + "€";
-    }
-
-    function agregarPedido() {
-      const nombre = document.getElementById("nombre").value.trim();
-      const contacto = document.getElementById("contacto").value.trim();
-
-      if (!nombre || !contacto) {
-        alert("Rellena al menos nombre y contacto.");
-        return;
-      }
-
-      const pedido = {
-        nombre,
-        contacto,
-        equipo: document.getElementById("equipo").value,
-        equipacion: document.getElementById("equipacion").value,
-        tipo: document.getElementById("tipo").value,
-        talla: document.getElementById("talla").value,
-        cantidad: parseInt(document.getElementById("cantidad").value || "1", 10),
-        personalizacion: document.getElementById("personalizacion").value.trim(),
-        nombreNumero: document.getElementById("nombreNumero").checked,
-        patch: document.getElementById("patch").checked,
-        observaciones: document.getElementById("observaciones").value.trim(),
-        pagado: document.getElementById("pagado").checked,
-        precio: calcularPrecio()
-      };
-
-      pedidos.unshift(pedido);
-      renderPedidos();
-      actualizarTotales();
-      limpiarFormulario();
-    }
-
-    function limpiarFormulario() {
-      document.getElementById("nombre").value = "";
-      document.getElementById("contacto").value = "";
-      document.getElementById("equipo").value = "Real Madrid";
-      document.getElementById("equipacion").value = "1ª equipación";
-      document.getElementById("tipo").value = "Fan Version";
-      document.getElementById("talla").value = "M";
-      document.getElementById("cantidad").value = 1;
-      document.getElementById("personalizacion").value = "";
-      document.getElementById("nombreNumero").checked = false;
-      document.getElementById("patch").checked = false;
-      document.getElementById("observaciones").value = "";
-      document.getElementById("pagado").checked = false;
-      actualizarPreview();
-    }
-
-    function renderPedidos() {
-      const lista = document.getElementById("listaPedidos");
-
-      if (pedidos.length === 0) {
-        lista.innerHTML = '<p class="muted">Todavía no hay pedidos añadidos.</p>';
-        return;
-      }
-
-      lista.innerHTML = pedidos.map((p, i) => `
-        <div class="pedido-item">
-          <h4>${p.nombre} ${p.pagado ? '<span class="pill">Pagado</span>' : ''}</h4>
-          <div class="muted">${p.contacto}</div>
-          <p><strong>Equipo:</strong> ${p.equipo} | <strong>Equipación:</strong> ${p.equipacion}</p>
-          <p><strong>Tipo:</strong> ${p.tipo} | <strong>Talla:</strong> ${p.talla} | <strong>Cantidad:</strong> ${p.cantidad}</p>
-          <p><strong>Name and number:</strong> ${p.nombreNumero ? 'Sí' : 'No'} ${p.personalizacion ? ' - ' + p.personalizacion : ''}</p>
-          <p><strong>Patch:</strong> ${p.patch ? 'Sí' : 'No'}</p>
-          <p><strong>Observaciones:</strong> ${p.observaciones || '—'}</p>
-          <p><strong>Total:</strong> ${p.precio}€</p>
-          <button class="btn-secondary" onclick="eliminarPedido(${i})">Eliminar</button>
-        </div>
-      `).join("");
-    }
-
-    function eliminarPedido(index) {
-      pedidos.splice(index, 1);
-      renderPedidos();
-      actualizarTotales();
-    }
-
-    function actualizarTotales() {
-      const participantes = pedidos.length;
-      const camisetas = pedidos.reduce((a, p) => a + p.cantidad, 0);
-      const importe = pedidos.reduce((a, p) => a + p.precio, 0);
-      const beneficio = pedidos.reduce((a, p) => a + p.cantidad, 0); // 1€ por camiseta
-
-      document.getElementById("totalParticipantes").textContent = participantes;
-      document.getElementById("totalCamisetas").textContent = camisetas;
-      document.getElementById("importeTotal").textContent = importe + "€";
-      document.getElementById("beneficioTotal").textContent = beneficio + "€";
-    }
-
-    function descargarCSV() {
-      if (pedidos.length === 0) {
-        alert("No hay pedidos para descargar.");
-        return;
-      }
-
-      const cabeceras = [
-        "Nombre","Contacto","Equipo","Equipación","Tipo","Talla","Cantidad",
-        "Name and number","Texto personalización","Patch","Observaciones","Pagado","Precio"
-      ];
-
-      const filas = pedidos.map(p => [
-        p.nombre, p.contacto, p.equipo, p.equipacion, p.tipo, p.talla, p.cantidad,
-        p.nombreNumero ? "Sí" : "No", p.personalizacion, p.patch ? "Sí" : "No",
-        p.observaciones, p.pagado ? "Sí" : "No", p.precio
-      ]);
-
-      const contenido = [cabeceras, ...filas]
-        .map(fila => fila.map(valor => `"${String(valor).replace(/"/g, '""')}"`).join(";"))
-        .join("\n");
-
-      const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "pedidos-camisetas.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function mostrarGuia(tipo, boton) {
-      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-      boton.classList.add("active");
-
-      const guia = guias[tipo];
-      let html = "<table><thead><tr>";
-      html += guia.columnas.map(c => `<th>${c}</th>`).join("");
-      html += "</tr></thead><tbody>";
-      html += guia.filas.map(f => `<tr>${f.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
-      html += "</tbody></table>";
-
-      document.getElementById("guiaTallas").innerHTML = html;
-    }
-
-    ["tipo", "cantidad", "nombreNumero", "patch"].forEach(id => {
-      document.getElementById(id).addEventListener("change", actualizarPreview);
-      document.getElementById(id).addEventListener("input", actualizarPreview);
-    });
-
-    mostrarGuia("fan", document.querySelector(".tab-btn"));
-    actualizarPreview();
-    actualizarTotales();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
