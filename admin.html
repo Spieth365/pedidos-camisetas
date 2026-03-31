@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin pedidos camisetas</title>
+  <style>
+    :root{
+      --bg: #0f172a;
+      --card: #ffffff;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family: Inter, Arial, sans-serif;
+      background:#f1f5f9;
+      color:#0f172a;
+    }
+
+    header{
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color:white;
+      padding:32px 20px;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:24px 20px 40px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .topbar a{
+      color:white;
+      text-decoration:none;
+      opacity:.9;
+    }
+
+    .grid{
+      display:grid;
+      gap:20px;
+    }
+
+    .stats{
+      grid-template-columns:repeat(4,1fr);
+      margin-bottom:20px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:20px;
+      box-shadow:0 10px 30px rgba(15, 23, 42, .06);
+    }
+
+    .stat small{
+      color:var(--muted);
+      display:block;
+      margin-bottom:8px;
+    }
+
+    .stat strong{
+      font-size:2rem;
+    }
+
+    .buttons{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    button, input{
+      border-radius:14px;
+      border:1px solid var(--line);
+      padding:12px 14px;
+      font-size:1rem;
+    }
+
+    button{
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    .btn-primary{
+      background:var(--primary);
+      color:white;
+      border:none;
+    }
+
+    .btn-danger{
+      background:white;
+      color:var(--danger);
+      border:1px solid rgba(220,38,38,.2);
+    }
+
+    .btn-success{
+      background:white;
+      color:var(--success);
+      border:1px solid rgba(22,163,74,.2);
+    }
+
+    .filter-row{
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:12px;
+      align-items:center;
+      margin-bottom:18px;
+    }
+
+    .pedido{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      margin-top:14px;
+      background:#fff;
+    }
+
+    .pedido-head{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:.8rem;
+      font-weight:800;
+      background:#ecfdf5;
+      color:#047857;
+      margin-left:8px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+
+    th, td{
+      text-align:left;
+      padding:10px 8px;
+      border-bottom:1px solid #e5e7eb;
+      white-space:nowrap;
+    }
+
+    th{
+      background:#f8fafc;
+    }
+
+    .table-wrap{
+      overflow-x:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      margin-top:12px;
+    }
+
+    .empty{
+      color:var(--muted);
+      padding:16px;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+      background:#f8fafc;
+    }
+
+    @media (max-width:900px){
+      .stats, .filter-row{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container topbar" style="padding:0;">
+      <div>
+        <h1 style="margin:0 0 8px;">Panel administrador</h1>
+        <div style="opacity:.85;">Aquí sí puedes descargar el Excel completo y gestionar pedidos.</div>
+      </div>
+      <a href="index.html">← Volver a la página pública</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="grid stats">
+      <div class="card stat">
+        <small>Pedidos</small>
+        <strong id="statPedidos">0</strong>
+      </div>
+      <div class="card stat">
+        <small>Camisetas</small>
+        <strong id="statCamisetas">0</strong>
+      </div>
+      <div class="card stat">
+        <small>Importe</small>
+        <strong id="statImporte">0€</strong>
+      </div>
+      <div class="card stat">
+        <small>Pagados</small>
+        <strong id="statPagados">0</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="filter-row">
+        <input id="filtroNombre" type="text" placeholder="Filtrar por nombre o contacto" />
+        <button id="btnDescargarExcel" class="btn-primary">Descargar todo</button>
+        <button id="btnVaciarTodo" class="btn-danger">Borrar todo</button>
+      </div>
+
+      <div id="listaAdmin">
+        <div class="empty">No hay pedidos guardados.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
