@@ -1,11 +1,19 @@
-const STORAGE_KEY = "pedidosCamisetas";
+const STORAGE_KEY = "pedidosCamisetasV2";
 
 const precios = {
-  "Fan Version": 11,
-  "Women Version": 11,
-  "Kid Kit": 13,
-  "Player Version": 14,
-  "Retro": 16
+  "Fan Version": 10,
+  "Women Version": 10,
+  "Kid Kit": 12,
+  "Player Version": 13,
+  "Retro": 15
+};
+
+const tallasPorTipo = {
+  "Fan Version": ["S", "M", "L", "XL", "XXL", "XXXL"],
+  "Player Version": ["S", "M", "L", "XL", "XXL"],
+  "Women Version": ["S", "M", "L", "XL"],
+  "Kid Kit": ["16", "18", "20", "22", "24", "26", "28"],
+  "Retro": ["S", "M", "L", "XL", "XXL"]
 };
 
 const guias = {
@@ -54,6 +62,7 @@ const guias = {
 };
 
 let pedidos = cargarPedidos();
+let carritoActual = [];
 
 function cargarPedidos() {
   try {
@@ -69,7 +78,17 @@ function guardarPedidos() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pedidos));
 }
 
-function calcularPrecioActual() {
+function actualizarTallas() {
+  const tipo = document.getElementById("tipo").value;
+  const selectTalla = document.getElementById("talla");
+  const tallas = tallasPorTipo[tipo] || [];
+
+  selectTalla.innerHTML = tallas
+    .map((talla) => `<option value="${talla}">${talla}</option>`)
+    .join("");
+}
+
+function calcularPrecioCamiseta() {
   const tipo = document.getElementById("tipo").value;
   const cantidad = parseInt(document.getElementById("cantidad").value || "1", 10);
   const nombreNumero = document.getElementById("nombreNumero").checked;
@@ -84,14 +103,12 @@ function calcularPrecioActual() {
 }
 
 function actualizarPreview() {
-  document.getElementById("precioPreview").textContent = calcularPrecioActual() + "€";
+  document.getElementById("precioPreview").textContent = calcularPrecioCamiseta() + "€";
 }
 
-function obtenerPedidoFormulario() {
+function obtenerCamisetaFormulario() {
   return {
-    id: Date.now(),
-    nombre: document.getElementById("nombre").value.trim(),
-    contacto: document.getElementById("contacto").value.trim(),
+    id: Date.now() + Math.floor(Math.random() * 1000),
     equipo: document.getElementById("equipo").value,
     equipacion: document.getElementById("equipacion").value,
     tipo: document.getElementById("tipo").value,
@@ -101,106 +118,123 @@ function obtenerPedidoFormulario() {
     nombreNumero: document.getElementById("nombreNumero").checked,
     patch: document.getElementById("patch").checked,
     observaciones: document.getElementById("observaciones").value.trim(),
-    pagado: document.getElementById("pagado").checked,
-    precio: calcularPrecioActual()
+    precio: calcularPrecioCamiseta()
   };
 }
 
-function agregarPedido() {
-  const pedido = obtenerPedidoFormulario();
-
-  if (!pedido.nombre || !pedido.contacto) {
-    alert("Rellena al menos nombre y contacto.");
-    return;
-  }
-
-  pedidos.unshift(pedido);
-  guardarPedidos();
-  renderPedidos();
-  actualizarTotales();
-  limpiarFormulario();
-}
-
-function limpiarFormulario() {
-  document.getElementById("nombre").value = "";
-  document.getElementById("contacto").value = "";
+function limpiarFormularioCamiseta() {
   document.getElementById("equipo").value = "Real Madrid";
   document.getElementById("equipacion").value = "1ª equipación";
   document.getElementById("tipo").value = "Fan Version";
-  document.getElementById("talla").value = "M";
+  actualizarTallas();
   document.getElementById("cantidad").value = 1;
   document.getElementById("personalizacion").value = "";
   document.getElementById("nombreNumero").checked = false;
   document.getElementById("patch").checked = false;
   document.getElementById("observaciones").value = "";
-  document.getElementById("pagado").checked = false;
   actualizarPreview();
 }
 
-function renderPedidos() {
-  const lista = document.getElementById("listaPedidos");
+function agregarAlCarrito() {
+  const camiseta = obtenerCamisetaFormulario();
+  carritoActual.unshift(camiseta);
+  renderCarritoActual();
+  limpiarFormularioCamiseta();
+}
 
-  if (pedidos.length === 0) {
-    lista.innerHTML = '<p class="muted">Todavía no hay pedidos añadidos.</p>';
+function eliminarDelCarrito(id) {
+  carritoActual = carritoActual.filter((item) => item.id !== id);
+  renderCarritoActual();
+}
+
+function totalCarrito() {
+  return carritoActual.reduce((acc, item) => acc + item.precio, 0);
+}
+
+function renderCarritoActual() {
+  const contenedor = document.getElementById("carritoActual");
+
+  if (carritoActual.length === 0) {
+    contenedor.innerHTML = `<div class="empty">Todavía no has añadido camisetas a este pedido.</div>`;
+    document.getElementById("totalCarrito").textContent = "0€";
     return;
   }
 
-  lista.innerHTML = pedidos.map((p) => `
-    <div class="pedido-item">
-      <h4>
-        ${escapeHtml(p.nombre)}
-        ${p.pagado ? '<span class="pill">Pagado</span>' : ""}
-      </h4>
-      <div class="muted">${escapeHtml(p.contacto)}</div>
-      <p><strong>Equipo:</strong> ${escapeHtml(p.equipo)} | <strong>Equipación:</strong> ${escapeHtml(p.equipacion)}</p>
-      <p><strong>Tipo:</strong> ${escapeHtml(p.tipo)} | <strong>Talla:</strong> ${escapeHtml(p.talla)} | <strong>Cantidad:</strong> ${p.cantidad}</p>
-      <p><strong>Name and number:</strong> ${p.nombreNumero ? "Sí" : "No"}${p.personalizacion ? " - " + escapeHtml(p.personalizacion) : ""}</p>
-      <p><strong>Patch:</strong> ${p.patch ? "Sí" : "No"}</p>
-      <p><strong>Observaciones:</strong> ${p.observaciones ? escapeHtml(p.observaciones) : "—"}</p>
-      <p><strong>Total:</strong> ${p.precio}€</p>
-      <button type="button" class="btn-secondary" data-id="${p.id}">Eliminar</button>
-    </div>
+  contenedor.innerHTML = carritoActual.map((item) => `
+    <article class="cart-item">
+      <div class="item-head">
+        <div>
+          <h4>${escapeHtml(item.equipo)} · ${escapeHtml(item.tipo)}</h4>
+          <div class="muted">${escapeHtml(item.equipacion)} · Talla ${escapeHtml(item.talla)} · Cantidad ${item.cantidad}</div>
+        </div>
+        <div><strong>${item.precio}€</strong></div>
+      </div>
+
+      <div class="pedido-extra"><strong>Name and number:</strong> ${item.nombreNumero ? "Sí" : "No"}${item.personalizacion ? " - " + escapeHtml(item.personalizacion) : ""}</div>
+      <div class="pedido-extra"><strong>Patch:</strong> ${item.patch ? "Sí" : "No"}</div>
+      <div class="pedido-extra"><strong>Observaciones:</strong> ${item.observaciones ? escapeHtml(item.observaciones) : "—"}</div>
+
+      <div class="item-actions">
+        <button type="button" class="btn-danger" data-remove-cart="${item.id}">Quitar</button>
+      </div>
+    </article>
   `).join("");
 
-  lista.querySelectorAll("button[data-id]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      eliminarPedido(Number(btn.dataset.id));
-    });
+  contenedor.querySelectorAll("[data-remove-cart]").forEach((btn) => {
+    btn.addEventListener("click", () => eliminarDelCarrito(Number(btn.dataset.removeCart)));
   });
+
+  document.getElementById("totalCarrito").textContent = totalCarrito() + "€";
 }
 
-function eliminarPedido(id) {
-  pedidos = pedidos.filter((p) => p.id !== id);
+function enviarPedidoCompleto() {
+  const nombre = document.getElementById("nombreCliente").value.trim();
+  const contacto = document.getElementById("contactoCliente").value.trim();
+
+  if (!nombre || !contacto) {
+    alert("Rellena nombre y contacto.");
+    return;
+  }
+
+  if (carritoActual.length === 0) {
+    alert("Añade al menos una camiseta al pedido.");
+    return;
+  }
+
+  const pedido = {
+    id: Date.now(),
+    nombre,
+    contacto,
+    pagado: false,
+    fecha: new Date().toLocaleString("es-ES"),
+    total: totalCarrito(),
+    items: [...carritoActual]
+  };
+
+  pedidos.unshift(pedido);
   guardarPedidos();
+  carritoActual = [];
+  renderCarritoActual();
   renderPedidos();
   actualizarTotales();
+
+  document.getElementById("nombreCliente").value = "";
+  document.getElementById("contactoCliente").value = "";
+
+  alert("Pedido guardado correctamente.");
 }
 
-function vaciarPedidos() {
-  const confirmado = confirm("¿Seguro que quieres borrar todos los pedidos?");
-  if (!confirmado) return;
+function descargarMiPedido() {
+  const nombre = document.getElementById("nombreCliente").value.trim();
+  const contacto = document.getElementById("contactoCliente").value.trim();
 
-  pedidos = [];
-  guardarPedidos();
-  renderPedidos();
-  actualizarTotales();
-}
+  if (!nombre || !contacto) {
+    alert("Rellena nombre y contacto para descargar tu pedido.");
+    return;
+  }
 
-function actualizarTotales() {
-  const participantes = pedidos.length;
-  const camisetas = pedidos.reduce((acc, p) => acc + p.cantidad, 0);
-  const importe = pedidos.reduce((acc, p) => acc + p.precio, 0);
-  const beneficio = pedidos.reduce((acc, p) => acc + p.cantidad, 0); // 1€ por camiseta
-
-  document.getElementById("totalParticipantes").textContent = participantes;
-  document.getElementById("totalCamisetas").textContent = camisetas;
-  document.getElementById("importeTotal").textContent = importe + "€";
-  document.getElementById("beneficioTotal").textContent = beneficio + "€";
-}
-
-function descargarCSV() {
-  if (pedidos.length === 0) {
-    alert("No hay pedidos para descargar.");
+  if (carritoActual.length === 0) {
+    alert("No hay camisetas en el pedido actual.");
     return;
   }
 
@@ -216,39 +250,110 @@ function descargarCSV() {
     "Texto personalización",
     "Patch",
     "Observaciones",
-    "Pagado",
     "Precio"
   ];
 
-  const filas = pedidos.map((p) => [
-    p.nombre,
-    p.contacto,
-    p.equipo,
-    p.equipacion,
-    p.tipo,
-    p.talla,
-    p.cantidad,
-    p.nombreNumero ? "Sí" : "No",
-    p.personalizacion,
-    p.patch ? "Sí" : "No",
-    p.observaciones,
-    p.pagado ? "Sí" : "No",
-    p.precio
+  const filas = carritoActual.map((item) => [
+    nombre,
+    contacto,
+    item.equipo,
+    item.equipacion,
+    item.tipo,
+    item.talla,
+    item.cantidad,
+    item.nombreNumero ? "Sí" : "No",
+    item.personalizacion,
+    item.patch ? "Sí" : "No",
+    item.observaciones,
+    item.precio
   ]);
 
   const contenido = [cabeceras, ...filas]
-    .map((fila) =>
-      fila.map((valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`).join(";")
-    )
+    .map((fila) => fila.map((valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`).join(";"))
     .join("\n");
 
   const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;
-  enlace.download = "pedidos-camisetas.csv";
+  enlace.download = `pedido-${normalizarNombreArchivo(nombre)}.csv`;
   enlace.click();
   URL.revokeObjectURL(url);
+}
+
+function renderPedidos() {
+  const lista = document.getElementById("listaPedidos");
+
+  if (pedidos.length === 0) {
+    lista.innerHTML = `<div class="empty">Todavía no hay pedidos enviados.</div>`;
+    return;
+  }
+
+  lista.innerHTML = pedidos.map((pedido) => `
+    <article class="pedido-item">
+      <div class="item-head">
+        <div>
+          <h4>${escapeHtml(pedido.nombre)} ${pedido.pagado ? '<span class="pill">Pagado</span>' : ''}</h4>
+          <div class="muted">${escapeHtml(pedido.contacto)} · ${escapeHtml(pedido.fecha || "")}</div>
+        </div>
+        <div><strong>${pedido.total}€</strong></div>
+      </div>
+
+      <div class="pedido-extra"><strong>Número de camisetas distintas:</strong> ${pedido.items.length}</div>
+
+      <div class="table-wrap" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Equipación</th>
+              <th>Tipo</th>
+              <th>Talla</th>
+              <th>Cantidad</th>
+              <th>Extras</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pedido.items.map((item) => `
+              <tr>
+                <td>${escapeHtml(item.equipo)}</td>
+                <td>${escapeHtml(item.equipacion)}</td>
+                <td>${escapeHtml(item.tipo)}</td>
+                <td>${escapeHtml(item.talla)}</td>
+                <td>${item.cantidad}</td>
+                <td>${formatearExtras(item)}</td>
+                <td>${item.precio}€</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  `).join("");
+}
+
+function formatearExtras(item) {
+  const extras = [];
+  if (item.nombreNumero) {
+    extras.push(item.personalizacion ? `Name and number (${escapeHtml(item.personalizacion)})` : "Name and number");
+  }
+  if (item.patch) extras.push("Patch");
+  if (extras.length === 0) return "—";
+  return extras.join(" · ");
+}
+
+function actualizarTotales() {
+  const totalPedidos = pedidos.length;
+  const totalCamisetas = pedidos.reduce(
+    (acc, pedido) => acc + pedido.items.reduce((sum, item) => sum + item.cantidad, 0),
+    0
+  );
+  const importeTotal = pedidos.reduce((acc, pedido) => acc + pedido.total, 0);
+
+  document.getElementById("totalPedidos").textContent = totalPedidos;
+  document.getElementById("totalCamisetas").textContent = totalCamisetas;
+  document.getElementById("importeTotal").textContent = importeTotal + "€";
 }
 
 function mostrarGuia(tipo) {
@@ -275,17 +380,30 @@ function activarTabsGuia() {
 function activarEventosFormulario() {
   ["tipo", "cantidad", "nombreNumero", "patch"].forEach((id) => {
     const elemento = document.getElementById(id);
-    elemento.addEventListener("change", actualizarPreview);
+    elemento.addEventListener("change", () => {
+      if (id === "tipo") actualizarTallas();
+      actualizarPreview();
+    });
     elemento.addEventListener("input", actualizarPreview);
   });
 
-  document.getElementById("btnAgregar").addEventListener("click", agregarPedido);
-  document.getElementById("btnDescargar").addEventListener("click", descargarCSV);
-  document.getElementById("btnVaciar").addEventListener("click", vaciarPedidos);
+  document.getElementById("btnAgregarAlCarrito").addEventListener("click", agregarAlCarrito);
+  document.getElementById("btnLimpiarCamiseta").addEventListener("click", limpiarFormularioCamiseta);
+  document.getElementById("btnEnviarPedido").addEventListener("click", enviarPedidoCompleto);
+  document.getElementById("btnDescargarMiPedido").addEventListener("click", descargarMiPedido);
+}
+
+function normalizarNombreArchivo(texto) {
+  return String(texto)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function escapeHtml(texto) {
-  return String(texto)
+  return String(texto ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -294,9 +412,11 @@ function escapeHtml(texto) {
 }
 
 function iniciarApp() {
+  actualizarTallas();
   activarEventosFormulario();
   activarTabsGuia();
   mostrarGuia("fan");
+  renderCarritoActual();
   renderPedidos();
   actualizarPreview();
   actualizarTotales();
