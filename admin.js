@@ -1,29 +1,21 @@
-const STORAGE_KEY = "pedidosCamisetasV2";
+const API_URL = "https://pedidos-camisetas.javigr77.workers.dev";
 
-let pedidos = cargarPedidos();
+let pedidos = [];
 
-function cargarPedidos() {
-  try {
-    const guardados = localStorage.getItem(STORAGE_KEY);
-    return guardados ? JSON.parse(guardados) : [];
-  } catch (error) {
-    console.error("Error cargando pedidos:", error);
-    return [];
+async function cargarPedidos() {
+  const res = await fetch(`${API_URL}/api/pedidos`);
+  if (!res.ok) {
+    throw new Error("No se pudieron cargar los pedidos");
   }
-}
-
-function guardarPedidos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pedidos));
+  pedidos = await res.json();
+  return pedidos;
 }
 
 function actualizarStats(lista = pedidos) {
   const totalPedidos = lista.length;
-  const totalCamisetas = lista.reduce(
-    (acc, pedido) => acc + pedido.items.reduce((sum, item) => sum + item.cantidad, 0),
-    0
-  );
-  const importe = lista.reduce((acc, pedido) => acc + pedido.total, 0);
-  const pagados = lista.filter((pedido) => pedido.pagado).length;
+  const totalCamisetas = lista.reduce((acc, pedido) => acc + Number(pedido.cantidad || 0), 0);
+  const importe = lista.reduce((acc, pedido) => acc + Number(pedido.precio_total || 0), 0);
+  const pagados = lista.filter((pedido) => Number(pedido.pagado) === 1).length;
 
   document.getElementById("statPedidos").textContent = totalPedidos;
   document.getElementById("statCamisetas").textContent = totalCamisetas;
@@ -31,16 +23,42 @@ function actualizarStats(lista = pedidos) {
   document.getElementById("statPagados").textContent = pagados;
 }
 
+function agruparPedidos(lista) {
+  const grupos = new Map();
+
+  for (const item of lista) {
+    const key = `${item.nombre}__${item.contacto}__${item.created_at}`;
+    if (!grupos.has(key)) {
+      grupos.set(key, {
+        idVisual: key,
+        nombre: item.nombre,
+        contacto: item.contacto,
+        created_at: item.created_at,
+        pagado: Number(item.pagado) === 1,
+        total: 0,
+        items: []
+      });
+    }
+
+    const grupo = grupos.get(key);
+    grupo.total += Number(item.precio_total || 0);
+    grupo.items.push(item);
+  }
+
+  return Array.from(grupos.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
 function renderAdmin(lista = pedidos) {
   const contenedor = document.getElementById("listaAdmin");
+  const grupos = agruparPedidos(lista);
 
-  if (lista.length === 0) {
+  if (grupos.length === 0) {
     contenedor.innerHTML = `<div class="empty">No hay pedidos guardados.</div>`;
     actualizarStats(lista);
     return;
   }
 
-  contenedor.innerHTML = lista.map((pedido) => `
+  contenedor.innerHTML = grupos.map((pedido) => `
     <article class="pedido">
       <div class="pedido-head">
         <div>
@@ -49,19 +67,11 @@ function renderAdmin(lista = pedidos) {
             ${pedido.pagado ? '<span class="pill">Pagado</span>' : ''}
           </h3>
           <div style="color:#64748b;">
-            ${escapeHtml(pedido.contacto)} · ${escapeHtml(pedido.fecha || "")}
+            ${escapeHtml(pedido.contacto)} · ${escapeHtml(formatearFecha(pedido.created_at))}
           </div>
         </div>
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn-success" data-toggle="${pedido.id}">
-            ${pedido.pagado ? "Marcar pendiente" : "Marcar pagado"}
-          </button>
-          <button class="btn-danger" data-delete="${pedido.id}">Eliminar</button>
-        </div>
+        <div><strong>${pedido.total.toFixed(2)}€</strong></div>
       </div>
-
-      <p style="margin:12px 0 0;"><strong>Total:</strong> ${pedido.total}€</p>
 
       <div class="table-wrap">
         <table>
@@ -73,7 +83,9 @@ function renderAdmin(lista = pedidos) {
               <th>Talla</th>
               <th>Cantidad</th>
               <th>Extras</th>
+              <th>Observaciones</th>
               <th>Precio</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -85,7 +97,14 @@ function renderAdmin(lista = pedidos) {
                 <td>${escapeHtml(item.talla)}</td>
                 <td>${item.cantidad}</td>
                 <td>${formatearExtras(item)}</td>
-                <td>${item.precio}€</td>
+                <td>${item.observaciones ? escapeHtml(item.observaciones) : "—"}</td>
+                <td>${Number(item.precio_total).toFixed(2)}€</td>
+                <td style="display:flex;gap:8px;">
+                  <button class="btn-success" data-toggle="${item.id}">
+                    ${Number(item.pagado) === 1 ? "Pendiente" : "Pagado"}
+                  </button>
+                  <button class="btn-danger" data-delete="${item.id}">Eliminar</button>
+                </td>
               </tr>
             `).join("")}
           </tbody>
@@ -105,41 +124,46 @@ function renderAdmin(lista = pedidos) {
   actualizarStats(lista);
 }
 
-function togglePagado(id) {
-  pedidos = pedidos.map((pedido) =>
-    pedido.id === id ? { ...pedido, pagado: !pedido.pagado } : pedido
-  );
-  guardarPedidos();
-  aplicarFiltro();
+async function togglePagado(id) {
+  const res = await fetch(`${API_URL}/api/toggle-pagado/${id}`, {
+    method: "POST"
+  });
+
+  if (!res.ok) {
+    alert("No se pudo cambiar el estado.");
+    return;
+  }
+
+  await recargar();
 }
 
-function eliminarPedido(id) {
-  pedidos = pedidos.filter((pedido) => pedido.id !== id);
-  guardarPedidos();
-  aplicarFiltro();
-}
+async function eliminarPedido(id) {
+  const confirmar = confirm("¿Seguro que quieres eliminar esta línea?");
+  if (!confirmar) return;
 
-function vaciarTodo() {
-  const confirmado = confirm("¿Seguro que quieres borrar todos los pedidos?");
-  if (!confirmado) return;
+  const res = await fetch(`${API_URL}/api/pedidos/${id}`, {
+    method: "DELETE"
+  });
 
-  pedidos = [];
-  guardarPedidos();
-  aplicarFiltro();
+  if (!res.ok) {
+    alert("No se pudo eliminar.");
+    return;
+  }
+
+  await recargar();
 }
 
 function descargarTodoCSV() {
-  if (pedidos.length === 0) {
+  if (!pedidos.length) {
     alert("No hay pedidos para descargar.");
     return;
   }
 
   const cabeceras = [
-    "Pedido ID",
+    "ID",
+    "Fecha",
     "Nombre",
     "Contacto",
-    "Fecha",
-    "Pagado",
     "Equipo",
     "Equipación",
     "Tipo",
@@ -149,34 +173,27 @@ function descargarTodoCSV() {
     "Texto personalización",
     "Patch",
     "Observaciones",
-    "Precio línea",
-    "Total pedido"
+    "Pagado",
+    "Precio"
   ];
 
-  const filas = [];
-
-  pedidos.forEach((pedido) => {
-    pedido.items.forEach((item) => {
-      filas.push([
-        pedido.id,
-        pedido.nombre,
-        pedido.contacto,
-        pedido.fecha || "",
-        pedido.pagado ? "Sí" : "No",
-        item.equipo,
-        item.equipacion,
-        item.tipo,
-        item.talla,
-        item.cantidad,
-        item.nombreNumero ? "Sí" : "No",
-        item.personalizacion || "",
-        item.patch ? "Sí" : "No",
-        item.observaciones || "",
-        item.precio,
-        pedido.total
-      ]);
-    });
-  });
+  const filas = pedidos.map((item) => [
+    item.id,
+    item.created_at,
+    item.nombre,
+    item.contacto,
+    item.equipo,
+    item.equipacion,
+    item.tipo,
+    item.talla,
+    item.cantidad,
+    Number(item.nombre_numero) === 1 ? "Sí" : "No",
+    item.personalizacion || "",
+    Number(item.patch) === 1 ? "Sí" : "No",
+    item.observaciones || "",
+    Number(item.pagado) === 1 ? "Sí" : "No",
+    item.precio_total
+  ]);
 
   const contenido = [cabeceras, ...filas]
     .map((fila) => fila.map((valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`).join(";"))
@@ -199,9 +216,9 @@ function aplicarFiltro() {
     return;
   }
 
-  const filtrados = pedidos.filter((pedido) =>
-    pedido.nombre.toLowerCase().includes(filtro) ||
-    pedido.contacto.toLowerCase().includes(filtro)
+  const filtrados = pedidos.filter((item) =>
+    String(item.nombre).toLowerCase().includes(filtro) ||
+    String(item.contacto).toLowerCase().includes(filtro)
   );
 
   renderAdmin(filtrados);
@@ -209,12 +226,20 @@ function aplicarFiltro() {
 
 function formatearExtras(item) {
   const extras = [];
-  if (item.nombreNumero) {
+  if (Number(item.nombre_numero) === 1) {
     extras.push(item.personalizacion ? `Name and number (${escapeHtml(item.personalizacion)})` : "Name and number");
   }
-  if (item.patch) extras.push("Patch");
-  if (extras.length === 0) return "—";
+  if (Number(item.patch) === 1) extras.push("Patch");
+  if (!extras.length) return "—";
   return extras.join(" · ");
+}
+
+function formatearFecha(texto) {
+  try {
+    return new Date(texto).toLocaleString("es-ES");
+  } catch {
+    return texto || "";
+  }
 }
 
 function escapeHtml(texto) {
@@ -226,11 +251,21 @@ function escapeHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
+async function recargar() {
+  try {
+    await cargarPedidos();
+    aplicarFiltro();
+  } catch (error) {
+    console.error(error);
+    document.getElementById("listaAdmin").innerHTML = `<div class="empty">Error al cargar pedidos.</div>`;
+  }
+}
+
 function iniciarAdmin() {
-  renderAdmin();
   document.getElementById("btnDescargarExcel").addEventListener("click", descargarTodoCSV);
-  document.getElementById("btnVaciarTodo").addEventListener("click", vaciarTodo);
+  document.getElementById("btnRecargar").addEventListener("click", recargar);
   document.getElementById("filtroNombre").addEventListener("input", aplicarFiltro);
+  recargar();
 }
 
 document.addEventListener("DOMContentLoaded", iniciarAdmin);
