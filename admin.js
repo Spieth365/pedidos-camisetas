@@ -70,7 +70,10 @@ function renderAdmin(lista = pedidos) {
             ${escapeHtml(pedido.contacto)} · ${escapeHtml(formatearFecha(pedido.created_at))}
           </div>
         </div>
-        <div><strong>${pedido.total.toFixed(2)}€</strong></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <strong>${pedido.total.toFixed(2)}€</strong>
+          <button class="btn-danger" data-delete-group="${pedido.idVisual}">Eliminar pedido completo</button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -99,11 +102,11 @@ function renderAdmin(lista = pedidos) {
                 <td>${formatearExtras(item)}</td>
                 <td>${item.observaciones ? escapeHtml(item.observaciones) : "—"}</td>
                 <td>${Number(item.precio_total).toFixed(2)}€</td>
-                <td style="display:flex;gap:8px;">
+                <td style="display:flex;gap:8px;flex-wrap:wrap;">
                   <button class="btn-success" data-toggle="${item.id}">
                     ${Number(item.pagado) === 1 ? "Pendiente" : "Pagado"}
                   </button>
-                  <button class="btn-danger" data-delete="${item.id}">Eliminar</button>
+                  <button class="btn-danger" data-delete="${item.id}">Eliminar línea</button>
                 </td>
               </tr>
             `).join("")}
@@ -118,39 +121,82 @@ function renderAdmin(lista = pedidos) {
   });
 
   contenedor.querySelectorAll("[data-delete]").forEach((btn) => {
-    btn.addEventListener("click", () => eliminarPedido(Number(btn.dataset.delete)));
+    btn.addEventListener("click", () => eliminarLinea(Number(btn.dataset.delete)));
+  });
+
+  contenedor.querySelectorAll("[data-delete-group]").forEach((btn) => {
+    btn.addEventListener("click", () => eliminarGrupo(btn.dataset.deleteGroup));
   });
 
   actualizarStats(lista);
 }
 
 async function togglePagado(id) {
-  const res = await fetch(`${API_URL}/api/toggle-pagado/${id}`, {
-    method: "POST"
-  });
+  try {
+    const res = await fetch(`${API_URL}/api/toggle-pagado/${id}`, {
+      method: "POST"
+    });
 
-  if (!res.ok) {
-    alert("No se pudo cambiar el estado.");
-    return;
+    if (!res.ok) {
+      const texto = await res.text();
+      alert(`No se pudo cambiar el estado.\n${texto}`);
+      return;
+    }
+
+    await recargar();
+  } catch (error) {
+    console.error(error);
+    alert("Error de conexión al cambiar el estado.");
   }
-
-  await recargar();
 }
 
-async function eliminarPedido(id) {
+async function eliminarLinea(id) {
   const confirmar = confirm("¿Seguro que quieres eliminar esta línea?");
   if (!confirmar) return;
 
-  const res = await fetch(`${API_URL}/api/pedidos/${id}`, {
-    method: "DELETE"
-  });
+  try {
+    const res = await fetch(`${API_URL}/api/pedidos/${id}`, {
+      method: "DELETE"
+    });
 
-  if (!res.ok) {
-    alert("No se pudo eliminar.");
-    return;
+    if (!res.ok) {
+      const texto = await res.text();
+      alert(`No se pudo eliminar la línea.\n${texto}`);
+      return;
+    }
+
+    await recargar();
+  } catch (error) {
+    console.error(error);
+    alert("Error de conexión al eliminar la línea.");
   }
+}
 
-  await recargar();
+async function eliminarGrupo(idVisual) {
+  const confirmar = confirm("¿Seguro que quieres eliminar el pedido completo?");
+  if (!confirmar) return;
+
+  const grupo = agruparPedidos(pedidos).find((g) => g.idVisual === idVisual);
+  if (!grupo) return;
+
+  try {
+    for (const item of grupo.items) {
+      const res = await fetch(`${API_URL}/api/pedidos/${item.id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const texto = await res.text();
+        alert(`No se pudo eliminar una de las líneas del pedido.\n${texto}`);
+        return;
+      }
+    }
+
+    await recargar();
+  } catch (error) {
+    console.error(error);
+    alert("Error de conexión al eliminar el pedido completo.");
+  }
 }
 
 function descargarTodoCSV() {
