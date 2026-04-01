@@ -73,6 +73,22 @@ function actualizarTallas() {
     .join("");
 }
 
+function actualizarCamposCondicionales() {
+  const nombreNumero = document.getElementById("nombreNumero").checked;
+  const patch = document.getElementById("patch").checked;
+
+  document.getElementById("bloqueNombreNumero").classList.toggle("hidden", !nombreNumero);
+  document.getElementById("bloqueParches").classList.toggle("hidden", !patch);
+
+  if (!nombreNumero) {
+    document.getElementById("personalizacion").value = "";
+  }
+
+  if (!patch) {
+    document.getElementById("parchesTexto").value = "";
+  }
+}
+
 function calcularPrecioCamiseta() {
   const tipo = document.getElementById("tipo").value;
   const cantidad = parseInt(document.getElementById("cantidad").value || "1", 10);
@@ -94,6 +110,7 @@ function actualizarPreview() {
 function obtenerCamisetaFormulario() {
   return {
     id: Date.now() + Math.floor(Math.random() * 1000),
+    urlProducto: document.getElementById("urlProducto").value.trim(),
     equipo: document.getElementById("equipo").value,
     equipacion: document.getElementById("equipacion").value,
     tipo: document.getElementById("tipo").value,
@@ -102,12 +119,14 @@ function obtenerCamisetaFormulario() {
     personalizacion: document.getElementById("personalizacion").value.trim(),
     nombreNumero: document.getElementById("nombreNumero").checked,
     patch: document.getElementById("patch").checked,
+    parchesTexto: document.getElementById("parchesTexto").value.trim(),
     observaciones: document.getElementById("observaciones").value.trim(),
     precio: calcularPrecioCamiseta()
   };
 }
 
 function limpiarFormularioCamiseta() {
+  document.getElementById("urlProducto").value = "";
   document.getElementById("equipo").value = "Real Madrid";
   document.getElementById("equipacion").value = "1ª equipación";
   document.getElementById("tipo").value = "Fan Version";
@@ -116,7 +135,9 @@ function limpiarFormularioCamiseta() {
   document.getElementById("personalizacion").value = "";
   document.getElementById("nombreNumero").checked = false;
   document.getElementById("patch").checked = false;
+  document.getElementById("parchesTexto").value = "";
   document.getElementById("observaciones").value = "";
+  actualizarCamposCondicionales();
   actualizarPreview();
 }
 
@@ -155,8 +176,9 @@ function renderCarritoActual() {
         <div><strong>${item.precio}€</strong></div>
       </div>
 
-      <div class="pedido-extra"><strong>Name and number:</strong> ${item.nombreNumero ? "Sí" : "No"}${item.personalizacion ? " - " + escapeHtml(item.personalizacion) : ""}</div>
-      <div class="pedido-extra"><strong>Patch:</strong> ${item.patch ? "Sí" : "No"}</div>
+      <div class="pedido-extra"><strong>URL del producto:</strong> ${item.urlProducto ? `<a href="${escapeAttribute(item.urlProducto)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.urlProducto)}</a>` : "—"}</div>
+      <div class="pedido-extra"><strong>Name and number:</strong> ${item.nombreNumero ? (item.personalizacion ? escapeHtml(item.personalizacion) : "Sí") : "No"}</div>
+      <div class="pedido-extra"><strong>Parches:</strong> ${item.patch ? (item.parchesTexto ? escapeHtml(item.parchesTexto) : "Sí") : "No"}</div>
       <div class="pedido-extra"><strong>Observaciones:</strong> ${item.observaciones ? escapeHtml(item.observaciones) : "—"}</div>
 
       <div class="item-actions">
@@ -188,6 +210,12 @@ async function enviarPedidoCompleto() {
 
   try {
     for (const item of carritoActual) {
+      const observacionesCompletas = [
+        item.observaciones,
+        item.parchesTexto ? `Parches: ${item.parchesTexto}` : "",
+        item.urlProducto ? `URL producto: ${item.urlProducto}` : ""
+      ].filter(Boolean).join(" | ");
+
       const res = await fetch(`${API_URL}/api/pedidos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,7 +230,7 @@ async function enviarPedidoCompleto() {
           personalizacion: item.personalizacion,
           nombreNumero: item.nombreNumero,
           patch: item.patch,
-          observaciones: item.observaciones,
+          observaciones: observacionesCompletas,
           pagado: false,
           precioTotal: item.precio
         })
@@ -241,6 +269,7 @@ function descargarMiPedido() {
   const cabeceras = [
     "Nombre",
     "Contacto",
+    "URL producto",
     "Equipo",
     "Equipación",
     "Tipo",
@@ -249,6 +278,7 @@ function descargarMiPedido() {
     "Name and number",
     "Texto personalización",
     "Patch",
+    "Parches elegidos",
     "Observaciones",
     "Precio"
   ];
@@ -256,6 +286,7 @@ function descargarMiPedido() {
   const filas = carritoActual.map((item) => [
     nombre,
     contacto,
+    item.urlProducto,
     item.equipo,
     item.equipacion,
     item.tipo,
@@ -264,6 +295,7 @@ function descargarMiPedido() {
     item.nombreNumero ? "Sí" : "No",
     item.personalizacion,
     item.patch ? "Sí" : "No",
+    item.parchesTexto,
     item.observaciones,
     item.precio
   ]);
@@ -303,13 +335,21 @@ function activarTabsGuia() {
 }
 
 function activarEventosFormulario() {
-  ["tipo", "cantidad", "nombreNumero", "patch"].forEach((id) => {
+  ["tipo", "cantidad"].forEach((id) => {
     const elemento = document.getElementById(id);
     elemento.addEventListener("change", () => {
       if (id === "tipo") actualizarTallas();
       actualizarPreview();
     });
     elemento.addEventListener("input", actualizarPreview);
+  });
+
+  ["nombreNumero", "patch"].forEach((id) => {
+    const elemento = document.getElementById(id);
+    elemento.addEventListener("change", () => {
+      actualizarCamposCondicionales();
+      actualizarPreview();
+    });
   });
 
   document.getElementById("btnAgregarAlCarrito").addEventListener("click", agregarAlCarrito);
@@ -336,8 +376,17 @@ function escapeHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
+function escapeAttribute(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function iniciarApp() {
   actualizarTallas();
+  actualizarCamposCondicionales();
   activarEventosFormulario();
   activarTabsGuia();
   mostrarGuia("fan");
