@@ -1,11 +1,11 @@
 const API_URL = "https://pedidos-camisetas.javigr77.workers.dev";
 
 const precios = {
-  "Fan Version": 10,
-  "Women Version": 10,
-  "Kid Kit": 12,
-  "Player Version": 13,
-  "Retro": 15
+  "Fan Version": 11,
+  "Women Version": 11,
+  "Kid Kit": 13,
+  "Player Version": 14,
+  "Retro": 16
 };
 
 const tallasPorTipo = {
