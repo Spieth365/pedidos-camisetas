@@ -63,6 +63,14 @@ const guias = {
 
 let carritoActual = [];
 
+function contarParches(texto) {
+  if (!texto) return 0;
+  return texto
+    .split(",")
+    .map(p => p.trim())
+    .filter(Boolean).length;
+}
+
 function actualizarTallas() {
   const tipo = document.getElementById("tipo").value;
   const selectTalla = document.getElementById("talla");
@@ -94,11 +102,16 @@ function calcularPrecioCamiseta() {
   const cantidad = parseInt(document.getElementById("cantidad").value || "1", 10);
   const nombreNumero = document.getElementById("nombreNumero").checked;
   const patch = document.getElementById("patch").checked;
+  const parchesTexto = document.getElementById("parchesTexto").value.trim();
 
   let precioUnitario = precios[tipo] || 0;
 
   if (nombreNumero) precioUnitario += 2;
-  if (patch) precioUnitario += 1;
+
+  if (patch) {
+    const numeroParches = contarParches(parchesTexto);
+    precioUnitario += numeroParches > 0 ? numeroParches : 1;
+  }
 
   return precioUnitario * cantidad;
 }
@@ -178,7 +191,7 @@ function renderCarritoActual() {
 
       <div class="pedido-extra"><strong>URL del producto:</strong> ${item.urlProducto ? `<a href="${escapeAttribute(item.urlProducto)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.urlProducto)}</a>` : "—"}</div>
       <div class="pedido-extra"><strong>Name and number:</strong> ${item.nombreNumero ? (item.personalizacion ? escapeHtml(item.personalizacion) : "Sí") : "No"}</div>
-      <div class="pedido-extra"><strong>Parches:</strong> ${item.patch ? (item.parchesTexto ? escapeHtml(item.parchesTexto) : "Sí") : "No"}</div>
+      <div class="pedido-extra"><strong>Parches:</strong> ${item.patch ? (item.parchesTexto ? `${escapeHtml(item.parchesTexto)} (${contarParches(item.parchesTexto)} parche(s))` : "1 parche") : "No"}</div>
       <div class="pedido-extra"><strong>Observaciones:</strong> ${item.observaciones ? escapeHtml(item.observaciones) : "—"}</div>
 
       <div class="item-actions">
@@ -279,6 +292,7 @@ function descargarMiPedido() {
     "Texto personalización",
     "Patch",
     "Parches elegidos",
+    "Número de parches",
     "Observaciones",
     "Precio"
   ];
@@ -296,6 +310,7 @@ function descargarMiPedido() {
     item.personalizacion,
     item.patch ? "Sí" : "No",
     item.parchesTexto,
+    item.patch ? (contarParches(item.parchesTexto) || 1) : 0,
     item.observaciones,
     item.precio
   ]);
@@ -335,7 +350,7 @@ function activarTabsGuia() {
 }
 
 function activarEventosFormulario() {
-  ["tipo", "cantidad"].forEach((id) => {
+  ["tipo", "cantidad", "parchesTexto"].forEach((id) => {
     const elemento = document.getElementById(id);
     elemento.addEventListener("change", () => {
       if (id === "tipo") actualizarTallas();
