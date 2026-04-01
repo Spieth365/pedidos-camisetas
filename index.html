@@ -108,14 +108,22 @@
     }
 
     .main-grid {
+      display: grid;
       grid-template-columns: 1.12fr 0.88fr;
+      gap: 22px;
       align-items: start;
     }
 
-    .info-grid {
+    .right-column {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
       gap: 20px;
+    }
+
+    .top-info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
     }
 
     .card {
@@ -285,11 +293,6 @@
       color: white;
     }
 
-    .side-stack {
-      display: grid;
-      gap: 20px;
-    }
-
     .price-list ul {
       list-style: none;
       padding: 0;
@@ -432,7 +435,7 @@
       .hero-box,
       .main-grid,
       .form-grid,
-      .info-grid {
+      .top-info-row {
         grid-template-columns: 1fr;
       }
 
@@ -565,7 +568,7 @@
           <div class="full">
             <div class="check-grid">
               <label class="check"><input id="nombreNumero" type="checkbox" /> Name and number (+2€)</label>
-              <label class="check"><input id="patch" type="checkbox" /> Patch (+1€)</label>
+              <label class="check"><input id="patch" type="checkbox" /> Patch(s)</label>
             </div>
           </div>
 
@@ -575,8 +578,9 @@
           </div>
 
           <div class="field full hidden" id="bloqueParches">
-            <label for="parchesTexto">¿Qué parches quieres?</label>
+            <label for="parchesTexto">¿Qué parches quieres? (separados por comas)</label>
             <input id="parchesTexto" type="text" placeholder="Ej. LaLiga, Champions, Respect" />
+            <div class="muted" style="margin-top:8px;">Cada parche suma 1€.</div>
           </div>
 
           <div class="field full">
@@ -601,8 +605,8 @@
         </div>
       </div>
 
-      <aside class="side-stack">
-        <div class="info-grid">
+      <aside class="right-column">
+        <div class="top-info-row">
           <div class="card soft">
             <h2 class="section-title">Guía de tallas</h2>
             <p class="section-subtitle">Consulta rápida por tipo de camiseta.</p>
@@ -626,7 +630,7 @@
               <li><span>Player Version</span><strong>14€</strong></li>
               <li><span>Retro</span><strong>16€</strong></li>
               <li><span>Name and number</span><strong>+2€</strong></li>
-              <li><span>Patch</span><strong>+1€</strong></li>
+              <li><span>Cada parche</span><strong>+1€</strong></li>
             </ul>
           </div>
         </div>
