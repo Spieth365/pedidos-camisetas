@@ -172,24 +172,6 @@ function renderCarritoActual() {
   document.getElementById("totalCarrito").textContent = totalCarrito() + "€";
 }
 
-async function cargarResumen() {
-  try {
-    const res = await fetch(`${API_URL}/api/pedidos`);
-    if (!res.ok) return;
-
-    const pedidos = await res.json();
-    const totalPedidos = pedidos.length;
-    const totalCamisetas = pedidos.reduce((acc, p) => acc + Number(p.cantidad || 0), 0);
-    const importeTotal = pedidos.reduce((acc, p) => acc + Number(p.precio_total || 0), 0);
-
-    document.getElementById("totalPedidos").textContent = totalPedidos;
-    document.getElementById("totalCamisetas").textContent = totalCamisetas;
-    document.getElementById("importeTotal").textContent = importeTotal + "€";
-  } catch (error) {
-    console.error("Error cargando resumen:", error);
-  }
-}
-
 async function enviarPedidoCompleto() {
   const nombre = document.getElementById("nombreCliente").value.trim();
   const contacto = document.getElementById("contactoCliente").value.trim();
@@ -236,7 +218,6 @@ async function enviarPedidoCompleto() {
     renderCarritoActual();
     document.getElementById("nombreCliente").value = "";
     document.getElementById("contactoCliente").value = "";
-    await cargarResumen();
   } catch (error) {
     console.error(error);
     alert("Error al guardar el pedido.");
@@ -355,14 +336,13 @@ function escapeHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
-async function iniciarApp() {
+function iniciarApp() {
   actualizarTallas();
   activarEventosFormulario();
   activarTabsGuia();
   mostrarGuia("fan");
   renderCarritoActual();
   actualizarPreview();
-  await cargarResumen();
 }
 
 document.addEventListener("DOMContentLoaded", iniciarApp);
