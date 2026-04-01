@@ -102,12 +102,19 @@
       padding: 0 20px 32px;
     }
 
-    .grid {
+    .page-stack {
       display: grid;
       gap: 22px;
     }
 
-    .main-grid {
+    .top-wide-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .bottom-layout {
       display: grid;
       grid-template-columns: 1.12fr 0.88fr;
       gap: 22px;
@@ -117,13 +124,6 @@
     .right-column {
       display: grid;
       gap: 20px;
-    }
-
-    .top-info-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      align-items: start;
     }
 
     .card {
@@ -433,9 +433,9 @@
 
     @media (max-width: 980px) {
       .hero-box,
-      .main-grid,
-      .form-grid,
-      .top-info-row {
+      .top-wide-row,
+      .bottom-layout,
+      .form-grid {
         grid-template-columns: 1fr;
       }
 
@@ -480,183 +480,185 @@
   </header>
 
   <main class="container">
-    <section class="grid main-grid">
-      <div class="card">
-        <h2 class="section-title">Datos de la persona</h2>
-        <p class="section-subtitle">Estos datos se aplicarán al pedido completo.</p>
+    <section class="page-stack">
+      <div class="top-wide-row">
+        <div class="card soft">
+          <h2 class="section-title">Guía de tallas</h2>
+          <p class="section-subtitle">Consulta rápida por tipo de camiseta.</p>
 
-        <div class="gallery-box">
-          <div style="font-weight:800; margin-bottom:8px;">Galería de artículos</div>
-          <a href="https://soccerplus.x.yupoo.com/albums/" target="_blank" rel="noopener noreferrer">
-            https://soccerplus.x.yupoo.com/albums/
-          </a>
-          <div class="muted" style="margin-top:8px;">
-            Abre la galería, elige el artículo y pega abajo el enlace exacto del producto.
+          <div class="tabs">
+            <button type="button" class="tab-btn active" data-guia="fan">Fan hombre</button>
+            <button type="button" class="tab-btn" data-guia="player">Player hombre</button>
+            <button type="button" class="tab-btn" data-guia="women">Mujer</button>
+            <button type="button" class="tab-btn" data-guia="kids">Niños</button>
           </div>
+
+          <div class="table-wrap" id="guiaTallas"></div>
         </div>
 
-        <div class="form-grid">
-          <div class="field">
-            <label for="nombreCliente">Nombre</label>
-            <input id="nombreCliente" type="text" placeholder="Ej. Javi" />
-          </div>
-
-          <div class="field">
-            <label for="contactoCliente">Teléfono o contacto</label>
-            <input id="contactoCliente" type="text" placeholder="Ej. 600123123" />
-          </div>
-        </div>
-
-        <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;">
-
-        <h2 class="section-title">Añadir camiseta al pedido</h2>
-        <p class="section-subtitle">Puedes añadir varias camisetas distintas antes de enviar el pedido.</p>
-
-        <div class="form-grid">
-          <div class="field full">
-            <label for="urlProducto">URL del producto</label>
-            <input id="urlProducto" type="url" placeholder="Pega aquí el enlace del artículo de la galería" />
-          </div>
-
-          <div class="field">
-            <label for="equipo">Equipo</label>
-            <select id="equipo">
-              <option>Real Madrid</option>
-              <option>FC Barcelona</option>
-              <option>Atlético de Madrid</option>
-              <option>Liverpool</option>
-              <option>Manchester City</option>
-              <option>Arsenal</option>
-              <option>PSG</option>
-              <option>Bayern</option>
-              <option>Juventus</option>
-              <option>Milan</option>
-              <option>Selección Española</option>
-              <option>Otro</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="equipacion">Equipación</label>
-            <select id="equipacion">
-              <option>1ª equipación</option>
-              <option>2ª equipación</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="tipo">Tipo de camiseta</label>
-            <select id="tipo">
-              <option>Fan Version</option>
-              <option>Player Version</option>
-              <option>Women Version</option>
-              <option>Kid Kit</option>
-              <option>Retro</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="talla">Talla</label>
-            <select id="talla"></select>
-          </div>
-
-          <div class="field">
-            <label for="cantidad">Cantidad</label>
-            <input id="cantidad" type="number" min="1" value="1" />
-          </div>
-
-          <div class="full">
-            <div class="check-grid">
-              <label class="check"><input id="nombreNumero" type="checkbox" /> Name and number (+2€)</label>
-              <label class="check"><input id="patch" type="checkbox" /> Patch(s)</label>
-            </div>
-          </div>
-
-          <div class="field full hidden" id="bloqueNombreNumero">
-            <label for="personalizacion">¿Qué nombre y número quieres?</label>
-            <input id="personalizacion" type="text" placeholder="Ej. Bellingham 5" />
-          </div>
-
-          <div class="field full hidden" id="bloqueParches">
-            <label for="parchesTexto">¿Qué parches quieres? (separados por comas)</label>
-            <input id="parchesTexto" type="text" placeholder="Ej. LaLiga, Champions, Respect" />
-            <div class="muted" style="margin-top:8px;">Cada parche suma 1€.</div>
-          </div>
-
-          <div class="field full">
-            <label for="observaciones">Observaciones</label>
-            <textarea id="observaciones" placeholder="Detalles, color, versión exacta, notas adicionales, etc."></textarea>
-          </div>
-
-          <div class="full">
-            <div class="price-preview">
-              <div>
-                <small>Total de esta camiseta</small>
-                <strong id="precioPreview">11€</strong>
-              </div>
-              <div class="muted">Se actualiza automáticamente.</div>
-            </div>
-          </div>
-
-          <div class="full buttons">
-            <button type="button" class="btn-primary" id="btnAgregarAlCarrito">Añadir camiseta</button>
-            <button type="button" class="btn-secondary" id="btnLimpiarCamiseta">Limpiar camiseta</button>
-          </div>
+        <div class="card soft price-list">
+          <h2 class="section-title">Lista de precios</h2>
+          <ul>
+            <li><span>Fan Version</span><strong>11€</strong></li>
+            <li><span>Women Version</span><strong>11€</strong></li>
+            <li><span>Kid Kit</span><strong>13€</strong></li>
+            <li><span>Player Version</span><strong>14€</strong></li>
+            <li><span>Retro</span><strong>16€</strong></li>
+            <li><span>Name and number</span><strong>+2€</strong></li>
+            <li><span>Cada parche</span><strong>+1€</strong></li>
+          </ul>
         </div>
       </div>
 
-      <aside class="right-column">
-        <div class="top-info-row">
+      <div class="bottom-layout">
+        <div class="card">
+          <h2 class="section-title">Datos de la persona</h2>
+          <p class="section-subtitle">Estos datos se aplicarán al pedido completo.</p>
+
+          <div class="gallery-box">
+            <div style="font-weight:800; margin-bottom:8px;">Galería de artículos</div>
+            <a href="https://soccerplus.x.yupoo.com/albums/" target="_blank" rel="noopener noreferrer">
+              https://soccerplus.x.yupoo.com/albums/
+            </a>
+            <div class="muted" style="margin-top:8px;">
+              Abre la galería, elige el artículo y pega abajo el enlace exacto del producto.
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="nombreCliente">Nombre</label>
+              <input id="nombreCliente" type="text" placeholder="Ej. Javi" />
+            </div>
+
+            <div class="field">
+              <label for="contactoCliente">Teléfono o contacto</label>
+              <input id="contactoCliente" type="text" placeholder="Ej. 600123123" />
+            </div>
+          </div>
+
+          <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;">
+
+          <h2 class="section-title">Añadir camiseta al pedido</h2>
+          <p class="section-subtitle">Puedes añadir varias camisetas distintas antes de enviar el pedido.</p>
+
+          <div class="form-grid">
+            <div class="field full">
+              <label for="urlProducto">URL del producto</label>
+              <input id="urlProducto" type="url" placeholder="Pega aquí el enlace del artículo de la galería" />
+            </div>
+
+            <div class="field">
+              <label for="equipo">Equipo</label>
+              <select id="equipo">
+                <option>Real Madrid</option>
+                <option>FC Barcelona</option>
+                <option>Atlético de Madrid</option>
+                <option>Liverpool</option>
+                <option>Manchester City</option>
+                <option>Arsenal</option>
+                <option>PSG</option>
+                <option>Bayern</option>
+                <option>Juventus</option>
+                <option>Milan</option>
+                <option>Selección Española</option>
+                <option>Otro</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="equipacion">Equipación</label>
+              <select id="equipacion">
+                <option>1ª equipación</option>
+                <option>2ª equipación</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="tipo">Tipo de camiseta</label>
+              <select id="tipo">
+                <option>Fan Version</option>
+                <option>Player Version</option>
+                <option>Women Version</option>
+                <option>Kid Kit</option>
+                <option>Retro</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="talla">Talla</label>
+              <select id="talla"></select>
+            </div>
+
+            <div class="field">
+              <label for="cantidad">Cantidad</label>
+              <input id="cantidad" type="number" min="1" value="1" />
+            </div>
+
+            <div class="full">
+              <div class="check-grid">
+                <label class="check"><input id="nombreNumero" type="checkbox" /> Name and number (+2€)</label>
+                <label class="check"><input id="patch" type="checkbox" /> Patch(s)</label>
+              </div>
+            </div>
+
+            <div class="field full hidden" id="bloqueNombreNumero">
+              <label for="personalizacion">¿Qué nombre y número quieres?</label>
+              <input id="personalizacion" type="text" placeholder="Ej. Bellingham 5" />
+            </div>
+
+            <div class="field full hidden" id="bloqueParches">
+              <label for="parchesTexto">¿Qué parches quieres? (separados por comas)</label>
+              <input id="parchesTexto" type="text" placeholder="Ej. LaLiga, Champions, Respect" />
+              <div class="muted" style="margin-top:8px;">Cada parche suma 1€.</div>
+            </div>
+
+            <div class="field full">
+              <label for="observaciones">Observaciones</label>
+              <textarea id="observaciones" placeholder="Detalles, color, versión exacta, notas adicionales, etc."></textarea>
+            </div>
+
+            <div class="full">
+              <div class="price-preview">
+                <div>
+                  <small>Total de esta camiseta</small>
+                  <strong id="precioPreview">11€</strong>
+                </div>
+                <div class="muted">Se actualiza automáticamente.</div>
+              </div>
+            </div>
+
+            <div class="full buttons">
+              <button type="button" class="btn-primary" id="btnAgregarAlCarrito">Añadir camiseta</button>
+              <button type="button" class="btn-secondary" id="btnLimpiarCamiseta">Limpiar camiseta</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="right-column">
           <div class="card soft">
-            <h2 class="section-title">Guía de tallas</h2>
-            <p class="section-subtitle">Consulta rápida por tipo de camiseta.</p>
+            <h2 class="section-title">Tu pedido actual</h2>
+            <p class="section-subtitle">
+              Aquí verás las camisetas que vas añadiendo antes de enviar el pedido completo.
+            </p>
 
-            <div class="tabs">
-              <button type="button" class="tab-btn active" data-guia="fan">Fan hombre</button>
-              <button type="button" class="tab-btn" data-guia="player">Player hombre</button>
-              <button type="button" class="tab-btn" data-guia="women">Mujer</button>
-              <button type="button" class="tab-btn" data-guia="kids">Niños</button>
+            <div id="carritoActual" class="cart-list">
+              <div class="empty">Todavía no has añadido camisetas a este pedido.</div>
             </div>
 
-            <div class="table-wrap" id="guiaTallas"></div>
-          </div>
-
-          <div class="card soft price-list">
-            <h2 class="section-title">Lista de precios</h2>
-            <ul>
-              <li><span>Fan Version</span><strong>11€</strong></li>
-              <li><span>Women Version</span><strong>11€</strong></li>
-              <li><span>Kid Kit</span><strong>13€</strong></li>
-              <li><span>Player Version</span><strong>14€</strong></li>
-              <li><span>Retro</span><strong>16€</strong></li>
-              <li><span>Name and number</span><strong>+2€</strong></li>
-              <li><span>Cada parche</span><strong>+1€</strong></li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="card soft">
-          <h2 class="section-title">Tu pedido actual</h2>
-          <p class="section-subtitle">
-            Aquí verás las camisetas que vas añadiendo antes de enviar el pedido completo.
-          </p>
-
-          <div id="carritoActual" class="cart-list">
-            <div class="empty">Todavía no has añadido camisetas a este pedido.</div>
-          </div>
-
-          <div class="cart-summary">
-            <div>
-              <div class="hint">Total del pedido actual</div>
-              <strong id="totalCarrito">0€</strong>
-            </div>
-            <div class="buttons" style="margin:0;">
-              <button type="button" class="btn-warning" id="btnDescargarMiPedido">Descargar mi pedido</button>
-              <button type="button" class="btn-primary" id="btnEnviarPedido">Enviar pedido completo</button>
+            <div class="cart-summary">
+              <div>
+                <div class="hint">Total del pedido actual</div>
+                <strong id="totalCarrito">0€</strong>
+              </div>
+              <div class="buttons" style="margin:0;">
+                <button type="button" class="btn-warning" id="btnDescargarMiPedido">Descargar mi pedido</button>
+                <button type="button" class="btn-primary" id="btnEnviarPedido">Enviar pedido completo</button>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      </div>
     </section>
   </main>
 
