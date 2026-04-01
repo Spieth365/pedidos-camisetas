@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido camisetas fútbol</title>
+
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:#f4f6f8;
+      color:#1e293b;
+    }
+
+    .container {
+      max-width:1200px;
+      margin:auto;
+      padding:20px;
+    }
+
+    h1,h2 {
+      margin-top:0;
+    }
+
+    .grid-top {
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:20px;
+      margin-bottom:20px;
+    }
+
+    .card {
+      background:white;
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .form-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:15px;
+    }
+
+    .full {
+      grid-column:1/-1;
+    }
+
+    input, select, textarea {
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+
+    button {
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .btn-primary { background:#16a34a; color:white; }
+    .btn-danger { background:#dc2626; color:white; }
+    .btn-secondary { background:#e2e8f0; }
+
+    .hidden { display:none; }
+
+    .cart-item {
+      border-bottom:1px solid #ddd;
+      padding:10px 0;
+    }
+
+    .price {
+      font-size:20px;
+      font-weight:bold;
+    }
+
+    ul { padding:0; list-style:none; }
+    li { display:flex; justify-content:space-between; padding:6px 0; }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>⚽ Pedido de camisetas</h1>
+
+  <!-- TOP -->
+  <div class="grid-top">
+
+    <!-- TALLAS -->
+    <div class="card">
+      <h2>Guía de tallas</h2>
+
+      <div id="guiaTallas"></div>
+    </div>
+
+    <!-- PRECIOS -->
+    <div class="card">
+      <h2>Precios</h2>
+      <ul>
+        <li><span>Fan Version</span><strong>11€</strong></li>
+        <li><span>Women Version</span><strong>11€</strong></li>
+        <li><span>Kid Kit</span><strong>13€</strong></li>
+        <li><span>Player Version</span><strong>14€</strong></li>
+        <li><span>Retro</span><strong>16€</strong></li>
+        <li><span>Name and number</span><strong>+2€</strong></li>
+        <li><span>Cada parche</span><strong>+1€</strong></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="card">
+
+    <h2>Datos</h2>
+
+    <div class="form-grid">
+      <input id="nombreCliente" placeholder="Nombre">
+      <input id="contactoCliente" placeholder="Contacto">
+    </div>
+
+    <hr>
+
+    <h2>Añadir camiseta</h2>
+
+    <div class="form-grid">
+
+      <div class="full">
+        <input id="urlProducto" placeholder="URL producto (Yupoo)">
+      </div>
+
+      <!-- EQUIPO -->
+      <select id="equipo">
+        <option>Real Madrid</option>
+        <option>FC Barcelona</option>
+        <option>Atlético</option>
+        <option>Liverpool</option>
+        <option>PSG</option>
+        <option>Bayern</option>
+        <option>Otro</option>
+      </select>
+
+      <!-- CAMPO OTRO -->
+      <div id="bloqueEquipoPersonalizado" class="hidden full">
+        <input id="equipoPersonalizado" list="equiposList" placeholder="Escribe el equipo">
+        <datalist id="equiposList">
+          <option value="Chelsea">
+          <option value="Manchester United">
+          <option value="Inter Miami">
+          <option value="Napoli">
+          <option value="Roma">
+        </datalist>
+      </div>
+
+      <select id="equipacion">
+        <option>1ª equipación</option>
+        <option>2ª equipación</option>
+      </select>
+
+      <select id="tipo">
+        <option>Fan Version</option>
+        <option>Player Version</option>
+        <option>Women Version</option>
+        <option>Kid Kit</option>
+        <option>Retro</option>
+      </select>
+
+      <select id="talla"></select>
+
+      <input id="cantidad" type="number" value="1">
+
+      <!-- CHECKS -->
+      <div class="full">
+        <label><input type="checkbox" id="nombreNumero"> Name & Number (+2€)</label>
+        <label><input type="checkbox" id="patch"> Parches</label>
+      </div>
+
+      <!-- PERSONALIZACIÓN -->
+      <div id="bloqueNombreNumero" class="hidden full">
+        <input id="personalizacion" placeholder="Ej: Messi 10">
+      </div>
+
+      <!-- PARCHES -->
+      <div id="bloqueParches" class="hidden full">
+        <input id="parchesTexto" placeholder="LaLiga, Champions...">
+      </div>
+
+      <textarea id="observaciones" class="full" placeholder="Observaciones"></textarea>
+
+      <div class="full price" id="precioPreview">0€</div>
+
+      <button class="btn-primary" id="btnAgregarAlCarrito">Añadir</button>
+      <button class="btn-secondary" id="btnLimpiarCamiseta">Limpiar</button>
+
+    </div>
+
+  </div>
+
+  <!-- CARRITO -->
+  <div class="card">
+    <h2>Pedido</h2>
+
+    <div id="carritoActual"></div>
+
+    <h3>Total: <span id="totalCarrito">0€</span></h3>
+
+    <button class="btn-primary" id="btnEnviarPedido">Enviar pedido</button>
+    <button class="btn-secondary" id="btnDescargarMiPedido">Descargar</button>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
